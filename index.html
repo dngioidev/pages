@@ -44,7 +44,6 @@
     <label for="github-token" class="sr-only">GitHub Personal Access Token</label>
     <input id="github-token" type="password" placeholder="GitHub Personal Access Token" class="mb-2 p-2 border rounded w-full" />
     <button id="export-results-github-button" ...>Export Results to GitHub</button>
-    <button id="upload-results-google-button" ...>Upload Results to Google Sheets</button>
 </div>
             </div>
             <!-- Message area for upload feedback -->
@@ -93,7 +92,6 @@
         const uploadStatusMessage = document.getElementById('upload-status-message'); // New element for feedback
         const exportResultsGitHubButton = document.getElementById('export-results-github-button');
         exportResultsGitHubButton.addEventListener('click', exportResultsToGitHub);
-        exportResultsGitHubButton.addEventListener('click', uploadResultsToGoogleSheet); // Attach event listener for upload to Google Sheets
 
         // Event Listeners
         nextButton.addEventListener('click', handleNextOrSubmit);
@@ -103,9 +101,6 @@
         let currentQuestionIndex = 0;
         let selectedAnswers = Array(questions.length).fill(null);
         let score = 0;
-
-        // IMPORTANT: This URL is set to the one you provided.
-        const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxC1wxUQRC6lHK7MtN9ye7a0fMs-bV9VVLYseEVGs3h6BOQzdf69K3ZyKdKZ7gAtap1/execc';
 
         /**
          * Converts a numeric index to an uppercase letter (A, B, C, D).
@@ -219,13 +214,22 @@
         }
 
         /**
-         * Sends quiz results to the Google Apps Script web app.
+         * Exports the quiz results to a GitHub repo as a new file.
          */
-        async function uploadResultsToGoogleSheet() {
-            uploadStatusMessage.textContent = 'Uploading results...';
-            exportResultsGitHubButton.disabled = true; // Disable button to prevent multiple submissions
+        async function exportResultsToGitHub() {
+            // Hardcoded GitHub token (for demo/testing only; do NOT use in production)
+            const token = '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';
+            // const token = document.getElementById('github-token').value.trim();
+            if (!token) {
+                uploadStatusMessage.textContent = 'Please enter your GitHub Personal Access Token.';
+                uploadStatusMessage.classList.remove('text-green-600');
+                uploadStatusMessage.classList.add('text-red-500');
+                return;
+            }
 
+            // Build the content to save (as JSON)
             const quizData = {
+                timestamp: new Date().toISOString(),
                 totalScore: score,
                 maxScore: questions.length,
                 answers: questions.map((q, index) => ({
@@ -235,118 +239,56 @@
                     isCorrect: (selectedAnswers[index] === q.correctAnswer)
                 }))
             };
+            const fileContent = JSON.stringify(quizData, null, 2);
+            const contentBase64 = btoa(unescape(encodeURIComponent(fileContent)));
+
+            // File path: e.g., results/quiz-result-20250608T195119.json
+            const fileName = `results/quiz-result-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
+
+            // GitHub API parameters
+            const owner = 'dngioidev';
+            const repo = 'pages';
+            const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}`;
+
+            // Prepare commit payload
+            const body = {
+                message: `Quiz result at ${new Date().toISOString()}`,
+                content: contentBase64
+            };
+
+            uploadStatusMessage.textContent = 'Exporting results to GitHub...';
 
             try {
-                const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-                    method: 'POST',
+                const res = await fetch(apiUrl, {
+                    method: 'PUT',
                     headers: {
+                        'Authorization': `token ${token}`,
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(quizData),
+                    body: JSON.stringify(body),
                 });
 
-                // Check if the response was successful before parsing JSON
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (!res.ok) {
+                    throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
                 }
 
-                const result = await response.json();
+                const data = await res.json();
+                console.log('GitHub response:', data); // Log the entire response for debugging
 
-                if (result.status === "success") {
-                    uploadStatusMessage.textContent = 'Results uploaded successfully!';
+                if (data.content && data.content.download_url) {
+                    uploadStatusMessage.textContent = `Results exported to GitHub: ${data.content.download_url}`;
                     uploadStatusMessage.classList.remove('text-red-500');
                     uploadStatusMessage.classList.add('text-green-600');
                 } else {
-                    uploadStatusMessage.textContent = `Upload failed: ${result.message || 'Unknown error'}`;
-                    uploadStatusMessage.classList.remove('text-green-600');
-                    uploadStatusMessage.classList.add('text-red-500');
+                    throw new Error('Unexpected response structure from GitHub API');
                 }
             } catch (error) {
-                console.error('Error sending quiz results:', error); // Log the full error object
-                uploadStatusMessage.textContent = `Upload failed: ${error.message || 'Network error or server issue. Please try again.'}`;
+                console.error('Error exporting results to GitHub:', error);
+                uploadStatusMessage.textContent = `Export failed: ${error.message || 'Unknown error'}`;
                 uploadStatusMessage.classList.remove('text-green-600');
                 uploadStatusMessage.classList.add('text-red-500');
-            } finally {
-                exportResultsGitHubButton.disabled = false; // Re-enable button after attempt
             }
         }
-
-        /**
- * Exports the quiz results to a GitHub repo as a new file.
- */
-async function exportResultsToGitHub() {
-    // Hardcoded GitHub token (for demo/testing only; do NOT use in production)
-    const token = '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';
-    // const token = document.getElementById('github-token').value.trim();
-    if (!token) {
-        uploadStatusMessage.textContent = 'Please enter your GitHub Personal Access Token.';
-        uploadStatusMessage.classList.remove('text-green-600');
-        uploadStatusMessage.classList.add('text-red-500');
-        return;
-    }
-
-    // Build the content to save (as JSON)
-    const quizData = {
-        timestamp: new Date().toISOString(),
-        totalScore: score,
-        maxScore: questions.length,
-        answers: questions.map((q, index) => ({
-            question: q.question,
-            yourAnswer: selectedAnswers[index] || "Not answered",
-            correctAnswer: q.correctAnswer,
-            isCorrect: (selectedAnswers[index] === q.correctAnswer)
-        }))
-    };
-    const fileContent = JSON.stringify(quizData, null, 2);
-    const contentBase64 = btoa(unescape(encodeURIComponent(fileContent)));
-
-    // File path: e.g., results/quiz-result-20250608T195119.json
-    const fileName = `results/quiz-result-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;
-
-    // GitHub API parameters
-    const owner = 'dngioidev';
-    const repo = 'pages';
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${fileName}`;
-
-    // Prepare commit payload
-    const body = {
-        message: `Quiz result at ${new Date().toISOString()}`,
-        content: contentBase64
-    };
-
-    uploadStatusMessage.textContent = 'Exporting results to GitHub...';
-
-    try {
-        const res = await fetch(apiUrl, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `token ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(body),
-        });
-
-        if (!res.ok) {
-            throw new Error(`GitHub API error: ${res.status} ${res.statusText}`);
-        }
-
-        const data = await res.json();
-        console.log('GitHub response:', data); // Log the entire response for debugging
-
-        if (data.content && data.content.download_url) {
-            uploadStatusMessage.textContent = `Results exported to GitHub: ${data.content.download_url}`;
-            uploadStatusMessage.classList.remove('text-red-500');
-            uploadStatusMessage.classList.add('text-green-600');
-        } else {
-            throw new Error('Unexpected response structure from GitHub API');
-        }
-    } catch (error) {
-        console.error('Error exporting results to GitHub:', error);
-        uploadStatusMessage.textContent = `Export failed: ${error.message || 'Unknown error'}`;
-        uploadStatusMessage.classList.remove('text-green-600');
-        uploadStatusMessage.classList.add('text-red-500');
-    }
-}
 
         // Initial render
         renderQuestion();
