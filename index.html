@@ -17,7 +17,6 @@
 <body class="min-h-screen bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center p-4">
 
     <!-- Add this input somewhere in your HTML, for demo/testing ONLY -->
-<input id="github-token" type="password" placeholder="GitHub Personal Access Token" class="mb-2 p-2 border rounded w-full" />
 
     <div id="app-container" class="flex flex-col items-center gap-6 w-full max-w-lg mx-auto">
         <!-- Quiz content will be rendered here -->
@@ -41,9 +40,12 @@
                     Retry Quiz
                 </button>
                 <!-- Changed 'Export Results' to 'Upload Results' -->
-                <button id="export-results-github-button" class="bg-gray-800 hover:bg-black text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none">
-    Export Results to GitHub
-</button>
+               <div class="flex flex-col sm:flex-row justify-center gap-4">
+    <input id="github-token" type="password" placeholder="GitHub Personal Access Token" class="mb-2 p-2 border rounded w-full" />
+    <button id="export-results-github-button" class="bg-gray-800 hover:bg-black text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none">
+        Export Results to GitHub
+    </button>
+</div>
             </div>
             <!-- Message area for upload feedback -->
             <p id="upload-status-message" class="mt-4 text-sm text-gray-600"></p>
