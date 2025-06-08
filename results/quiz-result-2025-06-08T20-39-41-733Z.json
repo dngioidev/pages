@@ -1,0 +1,38 @@
+{
+  "contestant": "Truong",
+  "timestamp": "2025-06-08T20:39:41.733Z",
+  "totalScore": 2,
+  "maxScore": 5,
+  "answers": [
+    {
+      "question": "What is the capital of France?",
+      "yourAnswer": "Madrid",
+      "correctAnswer": "Paris",
+      "isCorrect": false
+    },
+    {
+      "question": "Which planet is known as the Red Planet?",
+      "yourAnswer": "Venus",
+      "correctAnswer": "Mars",
+      "isCorrect": false
+    },
+    {
+      "question": "What is 2 + 2?",
+      "yourAnswer": "5",
+      "correctAnswer": "4",
+      "isCorrect": false
+    },
+    {
+      "question": "What is the largest ocean on Earth?",
+      "yourAnswer": "Pacific Ocean",
+      "correctAnswer": "Pacific Ocean",
+      "isCorrect": true
+    },
+    {
+      "question": "Who painted the Mona Lisa?",
+      "yourAnswer": "Leonardo da Vinci",
+      "correctAnswer": "Leonardo da Vinci",
+      "isCorrect": true
+    }
+  ]
+}
