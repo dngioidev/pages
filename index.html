@@ -90,6 +90,8 @@
         const retryButton = document.getElementById('retry-button');
         const uploadResultsButton = document.getElementById('upload-results-button'); // Renamed button
         const uploadStatusMessage = document.getElementById('upload-status-message'); // New element for feedback
+        const exportResultsGitHubButton = document.getElementById('export-results-github-button');
+        exportResultsGitHubButton.addEventListener('click', exportResultsToGitHub);
 
         // State variables
         let currentQuestionIndex = 0;
